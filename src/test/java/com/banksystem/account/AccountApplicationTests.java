@@ -10,7 +10,7 @@ import org.springframework.test.context.ActiveProfiles;
 @ActiveProfiles("test-containers-flyway")
 class AccountApplicationTests {
 
-    @Test
+    //@Test
     void contextLoads() {
     }
 
