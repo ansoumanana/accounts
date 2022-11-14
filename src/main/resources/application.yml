@@ -8,3 +8,10 @@ spring:
       active: prod
     config:
       import: optional:configserver:http://configserver:8070
+management:
+  auditevents:
+    enabled: true
+  endpoints:
+    web:
+      exposure:
+        include: *
