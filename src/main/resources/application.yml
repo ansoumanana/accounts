@@ -27,3 +27,35 @@ eureka :
     serviceUrl:
       defaultZone: http://eurekaserver:8090/eureka/
 
+resilience4j:
+  circuitbreaker:
+    configs:
+      default:
+        registerHealthIndicator: true
+    instances:
+      detailsForCustomerSupportApp:
+        failureRateThreshold: 50
+        minimumNumberOfCalls: 5
+        permittedNumberOfCallsInHalfOpenState: 2
+        waitDurationInOpenState: 30000
+  ratelimiter:
+    configs:
+      default:
+        registerHealthIndicator: true
+    instances:
+      sayHello:
+        limitForPeriod: 1
+        limitRefreshPeriod: 5000
+        timeoutDuration: 5000
+      rateLimiterForCustomerDetails:
+        limitForPeriod: 1
+        limitRefreshPeriod: 5000
+        timeoutDuration: 5000
+  retry:
+    configs:
+      default:
+        registerHealthIndicator: true
+    instances:
+      retryForCustomerDetails:
+        maxRetryAttempts: 3
+        waitDuration: 2000

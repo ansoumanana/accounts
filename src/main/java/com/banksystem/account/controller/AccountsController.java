@@ -8,6 +8,10 @@ import com.banksystem.account.models.Accounts;
 import com.banksystem.account.repository.AccountsRepository;
 import com.banksystem.account.service.client.CardsFeignClient;
 import com.banksystem.account.service.client.LoansFeignClient;
+import io.github.resilience4j.bulkhead.annotation.Bulkhead;
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import io.github.resilience4j.ratelimiter.annotation.RateLimiter;
+import io.github.resilience4j.retry.annotation.Retry;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -35,8 +39,26 @@ public class AccountsController {
 
     }
 
-    @GetMapping(value = "/customerDetails")
-    public CustomerDetails custumerDetails(@RequestBody Customer customer){
+    @GetMapping(value = "/detailsForCustomerSupportApp")
+    @CircuitBreaker(name = "detailsForCustomerSupportApp" , fallbackMethod = "customerDetailsFallback")
+    public CustomerDetails detailsForCustomerSupportApp(@RequestBody Customer customer){
+        Optional<Accounts> accounts = accountsRepository.findByCustomerId(customer.customerId());
+        Optional<List<Loans>> loans = loansFeignClient.getLoansDetails(customer);
+        Optional<List<Cards>> cards = cardsFeignClient.getCardDetails(customer);
+
+        return new  CustomerDetails(accounts.get(),loans.get(),cards.get());
+
+    }
+    private CustomerDetails customerDetailsFallback( Customer customer ,Throwable t){
+        Optional<Accounts> accounts = accountsRepository.findByCustomerId(customer.customerId());
+        Optional<List<Loans>> loans = loansFeignClient.getLoansDetails(customer);
+        return   CustomerDetails.withEmptyCardsList(accounts.get(),loans.get());
+
+    }
+
+    @GetMapping(value = "/retryForCustomerDetails")
+    @Retry(name = "retryForCustomerDetails", fallbackMethod = "customerDetailsFallback")
+    public CustomerDetails retryForCustomerDetails(@RequestBody Customer customer){
         Optional<Accounts> accounts = accountsRepository.findByCustomerId(customer.customerId());
         Optional<List<Loans>> loans = loansFeignClient.getLoansDetails(customer);
         Optional<List<Cards>> cards = cardsFeignClient.getCardDetails(customer);
@@ -45,13 +67,27 @@ public class AccountsController {
 
     }
 
-    @GetMapping(value = "/getcustomerDetails")
-    public CustomerDetails getCustumerDetails(@RequestBody Customer customer){
+    @GetMapping(value = "/rateLimiterForCustomerDetails")
+    @RateLimiter(name = "rateLimiterForCustomerDetails", fallbackMethod = "customerDetailsFallback")
+    //@Bulkhead(name = "rateLimiterForCustomerDetails", fallbackMethod = "customerDetailsFallback")
+    public CustomerDetails rateLimiterForCustomerDetails(@RequestBody Customer customer){
         Optional<Accounts> accounts = accountsRepository.findByCustomerId(customer.customerId());
         Optional<List<Loans>> loans = loansFeignClient.getLoansDetails(customer);
         Optional<List<Cards>> cards = cardsFeignClient.getCardDetails(customer);
 
         return new  CustomerDetails(accounts.get(),loans.get(),cards.get());
+
+    }
+
+    @GetMapping(value = "/sayHello")
+    @RateLimiter(name = "sayHello", fallbackMethod = "sayHelloFallback")
+    public String sayHello(){
+       return " Hello, welcome to bank system";
+
+    }
+
+    public String sayHelloFallback(Throwable throwable){
+        return " Hi, welcome to bank system sayHelloFallback";
 
     }
 }
