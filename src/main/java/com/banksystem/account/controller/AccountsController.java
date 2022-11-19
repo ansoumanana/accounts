@@ -18,7 +18,7 @@ import java.util.List;
 import java.util.Optional;
 
 @RestController
-@RequestMapping(value = "accounts")
+//@RequestMapping(value = "accounts")
 public class AccountsController {
 
     private final AccountsRepository accountsRepository;
@@ -41,27 +41,27 @@ public class AccountsController {
 
     @GetMapping(value = "/detailsForCustomerSupportApp")
     @CircuitBreaker(name = "detailsForCustomerSupportApp" , fallbackMethod = "customerDetailsFallback")
-    public CustomerDetails detailsForCustomerSupportApp(@RequestBody Customer customer){
+    public CustomerDetails detailsForCustomerSupportApp(@RequestHeader("banksystem-correlation-id") String correlationId, @RequestBody Customer customer ){
         Optional<Accounts> accounts = accountsRepository.findByCustomerId(customer.customerId());
-        Optional<List<Loans>> loans = loansFeignClient.getLoansDetails(customer);
-        Optional<List<Cards>> cards = cardsFeignClient.getCardDetails(customer);
+        Optional<List<Loans>> loans = loansFeignClient.getLoansDetails(correlationId,customer);
+        Optional<List<Cards>> cards = cardsFeignClient.getCardDetails(correlationId, customer);
 
         return new  CustomerDetails(accounts.get(),loans.get(),cards.get());
 
     }
-    private CustomerDetails customerDetailsFallback( Customer customer ,Throwable t){
+    private CustomerDetails customerDetailsFallback(String correlationId, Customer customer ,Throwable t){
         Optional<Accounts> accounts = accountsRepository.findByCustomerId(customer.customerId());
-        Optional<List<Loans>> loans = loansFeignClient.getLoansDetails(customer);
+        Optional<List<Loans>> loans = loansFeignClient.getLoansDetails(correlationId,customer);
         return   CustomerDetails.withEmptyCardsList(accounts.get(),loans.get());
 
     }
 
     @GetMapping(value = "/retryForCustomerDetails")
     @Retry(name = "retryForCustomerDetails", fallbackMethod = "customerDetailsFallback")
-    public CustomerDetails retryForCustomerDetails(@RequestBody Customer customer){
+    public CustomerDetails retryForCustomerDetails(@RequestHeader("banksystem-correlation-id") String correlationId,@RequestBody Customer customer){
         Optional<Accounts> accounts = accountsRepository.findByCustomerId(customer.customerId());
-        Optional<List<Loans>> loans = loansFeignClient.getLoansDetails(customer);
-        Optional<List<Cards>> cards = cardsFeignClient.getCardDetails(customer);
+        Optional<List<Loans>> loans = loansFeignClient.getLoansDetails(correlationId,customer);
+        Optional<List<Cards>> cards = cardsFeignClient.getCardDetails(correlationId, customer);
 
         return new  CustomerDetails(accounts.get(),loans.get(),cards.get());
 
@@ -70,10 +70,10 @@ public class AccountsController {
     @GetMapping(value = "/rateLimiterForCustomerDetails")
     @RateLimiter(name = "rateLimiterForCustomerDetails", fallbackMethod = "customerDetailsFallback")
     //@Bulkhead(name = "rateLimiterForCustomerDetails", fallbackMethod = "customerDetailsFallback")
-    public CustomerDetails rateLimiterForCustomerDetails(@RequestBody Customer customer){
+    public CustomerDetails rateLimiterForCustomerDetails(@RequestHeader("banksystem-correlation-id") String correlationId,@RequestBody Customer customer){
         Optional<Accounts> accounts = accountsRepository.findByCustomerId(customer.customerId());
-        Optional<List<Loans>> loans = loansFeignClient.getLoansDetails(customer);
-        Optional<List<Cards>> cards = cardsFeignClient.getCardDetails(customer);
+        Optional<List<Loans>> loans = loansFeignClient.getLoansDetails(correlationId,customer);
+        Optional<List<Cards>> cards = cardsFeignClient.getCardDetails(correlationId, customer);
 
         return new  CustomerDetails(accounts.get(),loans.get(),cards.get());
 
