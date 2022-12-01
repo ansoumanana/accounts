@@ -20,7 +20,7 @@ import java.util.List;
 import java.util.Optional;
 
 @RestController
-//@RequestMapping(value = "accounts")
+//@RequestMapping(value = "api")
 public class AccountsController {
 
     private final AccountsRepository accountsRepository;
