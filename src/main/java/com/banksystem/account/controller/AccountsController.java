@@ -12,6 +12,8 @@ import io.github.resilience4j.bulkhead.annotation.Bulkhead;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import io.github.resilience4j.ratelimiter.annotation.RateLimiter;
 import io.github.resilience4j.retry.annotation.Retry;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -24,6 +26,8 @@ public class AccountsController {
     private final AccountsRepository accountsRepository;
     private final LoansFeignClient loansFeignClient;
     private final CardsFeignClient cardsFeignClient;
+
+    private static final Logger logger = LoggerFactory.getLogger(AccountsController.class);
 
     public AccountsController(AccountsRepository accountsRepository, LoansFeignClient loansFeignClient, CardsFeignClient cardsFeignClient) {
         this.accountsRepository = accountsRepository;
@@ -42,10 +46,11 @@ public class AccountsController {
     @GetMapping(value = "/detailsForCustomerSupportApp")
     @CircuitBreaker(name = "detailsForCustomerSupportApp" , fallbackMethod = "customerDetailsFallback")
     public CustomerDetails detailsForCustomerSupportApp(@RequestHeader("banksystem-correlation-id") String correlationId, @RequestBody Customer customer ){
+        logger.info(" Start call of detailsForCustomerSupportApp ");
         Optional<Accounts> accounts = accountsRepository.findByCustomerId(customer.customerId());
         Optional<List<Loans>> loans = loansFeignClient.getLoansDetails(correlationId,customer);
         Optional<List<Cards>> cards = cardsFeignClient.getCardDetails(correlationId, customer);
-
+        logger.info(" End call of detailsForCustomerSupportApp ");
         return new  CustomerDetails(accounts.get(),loans.get(),cards.get());
 
     }
