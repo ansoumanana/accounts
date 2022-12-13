@@ -3,4 +3,4 @@ spring:
     application:
       name: account
     config:
-      import: optional:configserver:http://configserver:8070/
+      import: optional:configserver:http://localhost:8070/

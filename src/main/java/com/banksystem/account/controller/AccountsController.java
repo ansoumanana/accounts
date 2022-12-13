@@ -12,15 +12,24 @@ import io.github.resilience4j.bulkhead.annotation.Bulkhead;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import io.github.resilience4j.ratelimiter.annotation.RateLimiter;
 import io.github.resilience4j.retry.annotation.Retry;
+import io.micrometer.core.annotation.Timed;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import javax.ws.rs.core.Application;
 import java.util.List;
 import java.util.Optional;
 
 @RestController
-//@RequestMapping(value = "api")
+@RequestMapping(value = "/api/v1/accounts" ,produces = MediaType.APPLICATION_JSON_VALUE)
 public class AccountsController {
 
     private final AccountsRepository accountsRepository;
@@ -36,13 +45,20 @@ public class AccountsController {
     }
 
 
+    @Operation(summary = "Get  Accounts by Customer id")
+    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "Found the Account", content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = Accounts.class))}),
+            @ApiResponse(responseCode = "404", description = "Customer not found", content = @Content)})
     @GetMapping(value = "/{customerID}")
-    public Optional<Accounts> findByCustomerId( @PathVariable int customerID){
+    @Timed(value ="findByCustomerId.time", description = " Time taken to return account")
+    public ResponseEntity<Accounts> findByCustomerId( @PathVariable int customerID){
 
-        return accountsRepository.findByCustomerId(customerID);
-
+        final  Optional<Accounts> accounts = accountsRepository.findByCustomerId(customerID);
+        if (accounts.isEmpty())
+            return ResponseEntity.notFound().build();
+        return ResponseEntity.ok(accounts.get());
     }
 
+    @Timed(value ="detailsForCustomerSupportApp.time", description = " Time taken to return Customer Details")
     @GetMapping(value = "/detailsForCustomerSupportApp")
     @CircuitBreaker(name = "detailsForCustomerSupportApp" , fallbackMethod = "customerDetailsFallback")
     public CustomerDetails detailsForCustomerSupportApp(@RequestHeader("banksystem-correlation-id") String correlationId, @RequestBody Customer customer ){

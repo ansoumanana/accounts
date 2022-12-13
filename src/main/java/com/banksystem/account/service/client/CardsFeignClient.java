@@ -12,9 +12,9 @@ import java.util.Optional;
 public interface CardsFeignClient {
 
 
-    @RequestMapping(method = RequestMethod.GET ,value = "card", consumes = "application/json")
+    @RequestMapping(method = RequestMethod.GET ,value = "api/v1/cards/card", consumes = "application/json")
     Optional<List<Cards>>  findCustomerById(@RequestBody Customer customer);
 
-    @RequestMapping(method = RequestMethod.POST, value = "myCards", consumes = "application/json")
+    @RequestMapping(method = RequestMethod.POST, value = "api/v1/cards/myCards", consumes = "application/json")
     Optional<List<Cards>> getCardDetails(@RequestHeader("banksystem-correlation-id") String correlationId,@RequestBody Customer customer);
 }
