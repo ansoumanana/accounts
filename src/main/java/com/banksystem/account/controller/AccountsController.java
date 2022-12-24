@@ -24,7 +24,6 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import javax.ws.rs.core.Application;
 import java.util.List;
 import java.util.Optional;
 
@@ -103,12 +102,13 @@ public class AccountsController {
     @GetMapping(value = "/sayHello")
     @RateLimiter(name = "sayHello", fallbackMethod = "sayHelloFallback")
     public String sayHello(){
-       return " Hello, welcome to bank system";
-
+        String podNaame = Optional.ofNullable(System.getenv("HOSTNAME")).orElse("local");
+        return " Hi, welcome to bank system K8s cluster from ;" + podNaame;
     }
 
     public String sayHelloFallback(Throwable throwable){
-        return " Hi, welcome to bank system sayHelloFallback";
+        String podNaame = Optional.ofNullable(System.getenv("HOSTNAME")).orElse("local");
+        return " Hi, welcome to bank system K8s cluster from ;" + podNaame;
 
     }
 }
